@@ -1,5 +1,6 @@
 const scdl = require('soundcloud-downloader').default;
 const clipHelpers = require('./clipHelpers');
+const {strToSec} = require('./generalUtil');
 var ytsr = require('ytsr');
 var ytpl = require('ytpl');
 const ytdl = require("ytdl-core");
@@ -66,6 +67,7 @@ function displayQueue(id, time) {
 }
 
 function nowPlaying(song) {
+    console.log(song);
     return {embed: {
             color: "#FF6AD5",
             title: song.title,
@@ -152,12 +154,13 @@ module.exports = {
                 const filters = possibleFilters.get("Type").get("Video");
                 let res = await ytsr(filters.url, {limit: 1});
                 res = res.items[0];
+                console.log(res);
                 queue[msg.guild.id].push({type: "yt", 
                     cover: res.bestThumbnail.url, 
                     url: res.url, 
                     title: res.title, 
                     artist: res.author.name,
-                    time: res.durationSec
+                    time: strToSec(res.duration)
                 })   
             }
             msg.reply(`added ${queue[msg.guild.id][queue[msg.guild.id].length - 1].title} to queue.`);

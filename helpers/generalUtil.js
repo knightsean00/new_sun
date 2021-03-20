@@ -1,4 +1,11 @@
+const { strict } = require('assert');
 var fs = require('fs');
+
+const timeBreak = {
+    1: 1,
+    2: 60,
+    3: 3600
+}
 
 module.exports = {
     makeDir: (path) => {
@@ -35,6 +42,15 @@ module.exports = {
             output[flag] = option;
         }
 
+        return output
+    },
+
+    strToSec: (time) => {
+        let times = time.split(':');
+        let output = 0
+        for (let i = times.length - 1; i >= 0; i--) {
+            output += timeBreak[times.length - i] * parseInt(times[i])
+        }
         return output
     }
 }
