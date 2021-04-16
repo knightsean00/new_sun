@@ -13,43 +13,43 @@ const help = {embed: {
         },
         fields: [{
                 name: `${pre}ping`,
-                value: "Test the server latency"
+                value: "Test the server latency."
             },
             {
                 name: `${pre}join`,
-                value: "Bring Sunsets to your voice channel"
+                value: "Bring Sunsets to your voice channel."
             },
             {
                 name: `${pre}dc`,
-                value: "Disconnect Sunsets from the channel it's currently in"
+                value: "Disconnect Sunsets from the channel it's currently in."
             },
             {
                 name: `${pre}play [song name/url] -sc`,
-                value: "Searches for the given url or video. Default platform is YouTube. Use -sc flag for SoundCloud"
+                value: "Searches for the given url or video. Default platform is YouTube. Use -sc flag for SoundCloud."
             },
             {
                 name: `${pre}pause`,
-                value: "Pauses the given playback"
+                value: "Pauses the given playback."
             },
             {
                 name: `${pre}resume`,
-                value: "Resumes a paused playback"
+                value: "Resumes a paused playback."
             },
             {
                 name: `${pre}queue`,
-                value: "Prints out the current queue"
+                value: "Prints out the current queue."
             },
             {
                 name: `${pre}clear`,
-                value: "Clears the current queue"
+                value: "Clears the current queue."
             },
             {
-                name: `${pre}skip`,
-                value: "Skips the current song"
+                name: `${pre}skip [song #]`,
+                value: "Skips to the specified song #, otherwise, if no song # is specifed, skips the current song."
             },
             {
                 name: `${pre}stop`,
-                value: "Stops the playback and disconnects Sunsets from the channel"
+                value: "Stops the playback and clears the queue."
             },
             {
                 name: `${pre}np`,
@@ -57,11 +57,11 @@ const help = {embed: {
             },
             {
                 name: `${pre}remove [index]`,
-                value: "Removes the given song in Sunsets' queue"
+                value: "Removes the given song in Sunsets' queue."
             },
             {
                 name: `${pre}seek [index]`,
-                value: "Skips to song at position [index] in queue"
+                value: "Skips to song at position [index] in queue."
             },
             {
                 name: `${pre}clip`,
@@ -69,7 +69,7 @@ const help = {embed: {
             },
             {
                 name: `${pre}help`,
-                value: "try \"" + `${pre}help` + "\" for an infinite help loop"
+                value: "try \"" + `${pre}help` + "\" for an infinite help loop."
             }
         ],
     }
@@ -79,6 +79,7 @@ module.exports = {
     messageHandler: (msg) => {
         if (msg.content.startsWith(pre)) {
             const content = getArgs(msg.content.slice(pre.length));
+            console.log(content);
             switch (content.command) {
                 case "join":
                     voiceHelpers.join(msg);
@@ -89,6 +90,14 @@ module.exports = {
                     break;
     
                 case "play":
+                    if (content.position < 1) {
+                        msg.reply("you did not enter a song name.")
+                    } else {
+                        voiceHelpers.enqueue(msg, content.position.join(" ").trim(), content.sc || content.soundcloud);
+                    }
+                    break;
+
+                case "p":
                     if (content.position < 1) {
                         msg.reply("you did not enter a song name.")
                     } else {
@@ -113,8 +122,12 @@ module.exports = {
                     break;
     
                 case "skip":
-                    voiceHelpers.skip(msg);
-                    break;
+                    if (content.position < 1) {
+                        voiceHelpers.skip(msg, 0);
+                    } else {
+                        voiceHelpers.skip(msg, parseInt(content.position[0]));
+                    }
+                    break
     
                 case "stop":
                     voiceHelpers.stop(msg);
@@ -123,13 +136,17 @@ module.exports = {
                 case "queue":
                     voiceHelpers.queue(msg);
                     break;
-    
+
+                case "q":
+                    voiceHelpers.queue(msg);
+                    break;
+
                 case "clear":
                     voiceHelpers.clear(msg);
                     break;
     
                 case "remove":
-                    if (content.length < 2) {
+                    if (content.position < 1) {
                         msg.reply("you did not enter a song index.")
                     } else {
                         voiceHelpers.remove(msg, parseInt(content.position[0]));
@@ -137,7 +154,7 @@ module.exports = {
                     break;
     
                 case "seek":
-                    if (content.length < 2) {
+                    if (content.position < 1) {
                         msg.reply("you did not enter a song index.")
                     } else {
                         voiceHelpers.seek(msg, parseInt(content.position[0]));

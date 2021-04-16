@@ -13,15 +13,15 @@ client.on('message', msg => {
     messageHandler(msg, client)
 })
 
-client.on("voiceStateUpdate", (oldState, newState) => {
-    const memberID = oldState.member.id;
-    if (memberID !== client.user.id && newState.channel != null && newState.channel.members.has(client.user.id)) {
-        if (oldState.channelID == null && newState.channelID != null) {
-            // startStream(member, , newState.members, )
-        } else if (oldState.channelID != null && newState.channelID == null) {
-            console.log(memberID, "left");
-        }
-    }
-})
+// client.on("voiceStateUpdate", (oldState, newState) => {
+//     const memberID = oldState.member.id;
+//     if (memberID !== client.user.id && newState.channel != null && newState.channel.members.has(client.user.id)) {
+//         if (oldState.channelID == null && newState.channelID != null) {
+//             startStream(member, , newState.members, )
+//         } else if (oldState.channelID != null && newState.channelID == null) {
+//             console.log(memberID, "left");
+//         }
+//     }
+// })
 
 client.login(process.env.token);

@@ -39,8 +39,8 @@ function displayQueue(id, time) {
     if (queue[id].length === 1) {
         output += "\n\nNo other songs in queue."
     } else {
-        output += "\n\nQueue:"
-        for(let i = 1; i < Math.min(queue[id].length, 51); i++) {
+        output += "\n\nUp Next:"
+        for(let i = 1; i < Math.min(queue[id].length, 25); i++) {
             output += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`;
             runningTime += queue[id][i].time;
         }
@@ -67,7 +67,6 @@ function displayQueue(id, time) {
 }
 
 function nowPlaying(song) {
-    console.log(song);
     return {embed: {
             color: "#FF6AD5",
             title: song.title,
@@ -94,7 +93,7 @@ async function play(msg, force = false) {
     if (msg.guild.me.voice.channel == null) {
         await join(msg);
     }
-    if (queue[msg.guild.id].length === 1 || force) {
+    if (queue[msg.guild.id].length === 1 || (queue[msg.guild.id].length > 1 && force)) {
         const song = queue[msg.guild.id][0];
         try {
             var dispatch = null;
@@ -107,12 +106,10 @@ async function play(msg, force = false) {
             
             msg.channel.send(nowPlaying(song));
 
-            dispatch.on("speaking", speak => {
-                if (!speak) {
-                    queue[msg.guild.id].shift();
-                    play(msg, true);
-                }
-            })
+            dispatch.on("finish", () => {
+                queue[msg.guild.id].shift();
+                play(msg, true);
+            });
         } catch (e) {
             console.log(e);
             msg.channel.send(`I was unable to catch stream for ${song.title}. Skipping...`);
@@ -154,7 +151,6 @@ module.exports = {
                 const filters = possibleFilters.get("Type").get("Video");
                 let res = await ytsr(filters.url, {limit: 1});
                 res = res.items[0];
-                console.log(res);
                 queue[msg.guild.id].push({type: "yt", 
                     cover: res.bestThumbnail.url, 
                     url: res.url, 
@@ -246,9 +242,12 @@ module.exports = {
         }
     },
 
-    skip: (msg) => {
+    skip: (msg, index=0) => {
         try {
-            queue[msg.guild.id].shift();
+            if (index === 0) {
+                index++;
+            }
+            queue[msg.guild.id] = queue[msg.guild.id].slice(index);
             if (queue[msg.guild.id].length > 0) {
                 play(msg, true);
             } else {
@@ -275,7 +274,9 @@ module.exports = {
 
     seek: (msg, index) => {
         try {
-            queue[msg.guild.id] = queue[msg.guild.id].slice(index);
+            const song = queue[msg.guild.id].splice(index);
+            queue[msg.guild.id].splice(0, 1, song[0]);
+            
             play(msg, true);
         } catch {
             msg.reply("the song index was invalid.")

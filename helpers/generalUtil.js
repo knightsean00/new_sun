@@ -17,7 +17,6 @@ module.exports = {
     getArgs: (cmd) => {
         let args = cmd.split(' ');
         var output = {command: args[0], position: []};
-
         let option = []
         let flag = null
         for (let i = 1; i < args.length; i++) {
