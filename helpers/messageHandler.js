@@ -20,11 +20,11 @@ const help = {embed: {
                 value: "Bring Sunsets to your voice channel."
             },
             {
-                name: `${pre}dc`,
+                name: `${pre}dc/leave`,
                 value: "Disconnect Sunsets from the channel it's currently in."
             },
             {
-                name: `${pre}play [song name/url] -sc`,
+                name: `${pre}play/p [song name/url] -sc`,
                 value: "Searches for the given url or video. Default platform is YouTube. Use -sc flag for SoundCloud."
             },
             {
@@ -36,7 +36,7 @@ const help = {embed: {
                 value: "Resumes a paused playback."
             },
             {
-                name: `${pre}queue`,
+                name: `${pre}queue/q`,
                 value: "Prints out the current queue."
             },
             {
@@ -64,8 +64,8 @@ const help = {embed: {
                 value: "Skips to song at position [index] in queue."
             },
             {
-                name: `${pre}clip`,
-                value: "Save the last minute of recorded Discord audio."
+                name: `${pre}lyric(s)/ly [query]`,
+                value: "Finds lyrics for the query specified, otherwise, if no query is specified, then current song is used as query"
             },
             {
                 name: `${pre}help`,

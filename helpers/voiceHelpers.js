@@ -336,7 +336,8 @@ module.exports = {
     },
 
     lyrics: async (msg, query=null) => {
-        let q = (query != null) ? query : queue[msg.guild.id][0].title;
+        let curSong = (queue[msg.guild.id] != null && queue[msg.guild.id][0].length > 0) ? queue[msg.guild.id][0].title : null;
+        let q = (query != null) ? query : curSong;
         let res = (q != null) ? await getLyrics(q) : false
 
         if (res) {
@@ -349,8 +350,10 @@ module.exports = {
                     url: res.thumbnail
                 }
             }})
+        } else if (curSong != null) {
+            msg.reply(`there were no lyrics found with the query "${q}" found on Genius.com.`);
         } else {
-            msg.reply(`there were no lyrics found with the query "${q}" found on Genius.com`)
+            msg.reply(`there was no query provided.`);
         }
     }
 }
