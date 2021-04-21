@@ -7,6 +7,14 @@ const timeBreak = {
     3: 3600
 }
 
+const alias = {
+    "p": "play",
+    "q": "queue",
+    "lyrics": "lyric",
+    "ly": "lyric",
+    "leave": "dc",
+}
+
 module.exports = {
     makeDir: (path) => {
         if (!fs.existsSync(path)) {
@@ -16,7 +24,9 @@ module.exports = {
 
     getArgs: (cmd) => {
         let args = cmd.split(' ');
-        var output = {command: args[0], position: []};
+        let cmdName = (args[0] in alias) ? alias[args[0]] : args[0]
+
+        var output = {command: cmdName, position: []};
         let option = []
         let flag = null
         for (let i = 1; i < args.length; i++) {

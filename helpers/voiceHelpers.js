@@ -4,6 +4,7 @@ const {strToSec} = require('./generalUtil');
 var ytsr = require('ytsr');
 var ytpl = require('ytpl');
 const ytdl = require("ytdl-core");
+const axios = require('axios');
 
 var queue = {};
 
@@ -40,13 +41,15 @@ function displayQueue(id, time) {
         output += "\n\nNo other songs in queue."
     } else {
         output += "\n\nUp Next:"
-        for(let i = 1; i < Math.min(queue[id].length, 25); i++) {
+        let len = output.length
+        let i = 1
+        while (len < 1800 && i < queue[id].length) {
+            len += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`.length;
             output += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`;
             runningTime += queue[id][i].time;
+            i++;
         }
     }
-
-    let footer = (queue[id.length > 50]) ? "Only displays the first 50 songs" : ""
 
     return { embed: {
             color: "#FF6AD5",
@@ -59,9 +62,6 @@ function displayQueue(id, time) {
                 url: queue[id].cover,
             },
             description: output,
-            footer: {
-                text: footer
-            }
         }
     }
 }
@@ -119,6 +119,32 @@ async function play(msg, force = false) {
     } else if (queue[msg.guild.id].length === 0) {
         msg.channel.send("The queue is empty.")
     }
+}
+
+async function getLyrics(query) {
+    try {
+        let res = await axios.get("https://api.genius.com/search", {
+            headers: {
+                Authorization: `Bearer ${process.env.geniusToken}`
+            },
+            params: {
+                q: query
+            }
+        })
+        if (res.data.response.hits.length > 0) {
+            let i = 0;
+            while (res.data.response.hits[i].type !== "song") {
+                i++
+            }
+            return {title: res.data.response.hits[i].result.full_title, 
+                thumbnail: res.data.response.hits[i].result.header_image_thumbnail_url,
+                url: res.data.response.hits[i].result.url
+            }
+        }
+    } catch (err) {
+        console.log(err)
+    }
+    return false;
 }
 
 module.exports = {
@@ -286,7 +312,7 @@ module.exports = {
     remove: (msg, index) => {
         try {
             const removedSong = queue[msg.guild.id].splice(index, 1);
-            msg.reply(`${removedSong[0]} was removed`)
+            msg.reply(`${removedSong[0].title} was removed`)
         } catch {
             msg.reply("the song index was invalid.")
         }
@@ -295,7 +321,8 @@ module.exports = {
     queue: (msg) => {
         try {
             msg.channel.send(displayQueue(msg.guild.id, Math.floor(msg.guild.me.voice.connection.dispatcher.streamTime / 1000)));
-        } catch {
+        } catch (e) {
+            console.log(e);
             msg.reply("there is nothing in queue.");
         }
     },
@@ -305,6 +332,25 @@ module.exports = {
             msg.channel.send(nowPlaying(queue[msg.guild.id][0]));
         } catch {
             msg.reply("there is nothing playing.");
+        }
+    },
+
+    lyrics: async (msg, query=null) => {
+        let q = (query != null) ? query : queue[msg.guild.id][0].title;
+        let res = (q != null) ? await getLyrics(q) : false
+
+        if (res) {
+            msg.channel.send({embed: {
+                color: "#FF6AD5",
+                title: res.title,
+                url: res.url,
+                description: `Lyrics of ${res.title} on Genius.com`,
+                thumbnail: {
+                    url: res.thumbnail
+                }
+            }})
+        } else {
+            msg.reply(`there were no lyrics found with the query "${q}" found on Genius.com`)
         }
     }
 }

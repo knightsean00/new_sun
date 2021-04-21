@@ -97,14 +97,6 @@ module.exports = {
                     }
                     break;
 
-                case "p":
-                    if (content.position < 1) {
-                        msg.reply("you did not enter a song name.")
-                    } else {
-                        voiceHelpers.enqueue(msg, content.position.join(" ").trim(), content.sc || content.soundcloud);
-                    }
-                    break;
-
                 case "playlist":
                     if (content.position < 1) {
                         msg.reply("you did not enter a playlist name.")
@@ -134,10 +126,6 @@ module.exports = {
                     break;
     
                 case "queue":
-                    voiceHelpers.queue(msg);
-                    break;
-
-                case "q":
                     voiceHelpers.queue(msg);
                     break;
 
@@ -177,6 +165,14 @@ module.exports = {
 
                 case "np":
                     voiceHelpers.np(msg);
+                break;
+
+                case "lyric":
+                    if (content.position < 1) {
+                        voiceHelpers.lyrics(msg);
+                    } else {
+                        voiceHelpers.lyrics(msg, content.position.join(" ").trim());
+                    }
                 break;
 
                 default:
