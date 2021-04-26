@@ -3,6 +3,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const { messageHandler } = require('./helpers/messageHandler');
 const { startStream } = require('./helpers/clipHelpers');
+const { shutdown } = require('./helpers/generalUtil');
 
 
 client.on('ready', () => {
@@ -25,3 +26,12 @@ client.on('message', msg => {
 // })
 
 client.login(process.env.discordToken);
+
+
+process.on('SIGTERM', () => {
+    shutdown(client);
+})
+
+process.on('SIGINT', () => {
+    shutdown(client);
+})

@@ -24,7 +24,7 @@ module.exports = {
 
     getArgs: (cmd) => {
         let args = cmd.split(' ');
-        let cmdName = (args[0] in alias) ? alias[args[0]] : args[0]
+        let cmdName = (args[0].toLowerCase() in alias) ? alias[args[0].toLowerCase()] : args[0].toLowerCase();
 
         var output = {command: cmdName, position: []};
         let option = []
@@ -61,5 +61,13 @@ module.exports = {
             output += timeBreak[times.length - i] * parseInt(times[i])
         }
         return output
+    },
+
+    shutdown: (client) => {
+        console.log("\nShutting down sunsets_locale...");
+        client.voice.connections.each(v => {
+            v.disconnect();
+        });
+        process.exit()
     }
 }

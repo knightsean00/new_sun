@@ -3,7 +3,7 @@ const clipHelpers = require('./clipHelpers');
 const {strToSec} = require('./generalUtil');
 var ytsr = require('ytsr');
 var ytpl = require('ytpl');
-const ytdl = require("ytdl-core");
+const ytdl = require("ytdl-core-discord");
 const axios = require('axios');
 
 var queue = {};
@@ -101,15 +101,18 @@ async function play(msg, force = false) {
                 const stream = await scdl.download(song.url);
                 dispatch = msg.guild.me.voice.connection.play(stream);
             } else {
-                dispatch = msg.guild.me.voice.connection.play(ytdl(song.url));
+                const stream = await ytdl(song.url);
+                dispatch = msg.guild.me.voice.connection.play(stream, { type: 'opus' });
             }
             
             msg.channel.send(nowPlaying(song));
+            dispatch.on("error", console.log);
 
             dispatch.on("finish", () => {
                 queue[msg.guild.id].shift();
                 play(msg, true);
             });
+            
         } catch (e) {
             console.log(e);
             msg.channel.send(`I was unable to catch stream for ${song.title}. Skipping...`);
@@ -277,7 +280,7 @@ module.exports = {
             if (queue[msg.guild.id].length > 0) {
                 play(msg, true);
             } else {
-                msg.guild.me.voice.connection.dispatcher.destroy();
+                msg.guild.me.voice.connection.dispatcher.end();
             }
         } catch {
             msg.reply("there is nothing to skip.");
@@ -287,7 +290,7 @@ module.exports = {
     stop: (msg) => {
         try {
             queue[msg.guild.id] = [];
-            msg.guild.me.voice.connection.dispatcher.destroy();
+            msg.guild.me.voice.connection.dispatcher.end();
         } catch {
             msg.reply("there is nothing to stop.");
         }
@@ -336,7 +339,7 @@ module.exports = {
     },
 
     lyrics: async (msg, query=null) => {
-        let curSong = (queue[msg.guild.id] != null && queue[msg.guild.id][0].length > 0) ? queue[msg.guild.id][0].title : null;
+        let curSong = (queue[msg.guild.id] != null && queue[msg.guild.id].length > 0) ? queue[msg.guild.id][0].title : null;
         let q = (query != null) ? query : curSong;
         let res = (q != null) ? await getLyrics(q) : false
 
