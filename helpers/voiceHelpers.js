@@ -223,11 +223,18 @@ module.exports = {
                     }
                 })
             } else {
-                const possibleFilters = await ytsr.getFilters(query);
-                const filters = possibleFilters.get("Type").get("Playlist");
-                let res = await ytsr(filters.url, {limit: 1, });
-                res = res.items[0].url;
-                res = await ytpl(res);
+                let plUrl;
+                let res;
+                if (ytpl.validateID(query)) {
+                    plUrl = await ytpl.getPlaylistID(query);
+                } else {
+                    const possibleFilters = await ytsr.getFilters(query);
+                    const filters = possibleFilters.get("Type").get("Playlist");
+                    res = await ytsr(filters.url, {limit: 1, });
+                    plUrl = res.items[0].url;
+                }
+                
+                res = await ytpl(plUrl);
                 res = res.items;
                 res.forEach(song => {
                     try {
