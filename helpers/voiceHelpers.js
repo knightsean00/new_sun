@@ -201,11 +201,18 @@ module.exports = {
         let playOnAdd = (queue[msg.guild.id].length === 0) ? true : false;
         try {
             if (sc) {
-                let songInfo = await scdl.search({query: query, resourceType: "playlists", limit: 1});
-                songInfo = songInfo.collection[0].tracks;
+                let songInfo;
+                if (scdl.isPlaylistURL(query)) {
+                    songInfo = await scdl.getSetInfo(query);
+                    songInfo = songInfo.tracks;
+                } else {
+                    songInfo = await scdl.search({query: query, resourceType: "playlists", limit: 1});
+                    songInfo = songInfo.collection[0].tracks;
+                }
                 songInfo = songInfo.map(song => {
                     return song.id
                 });
+                
                 songInfo = await scdl.getTrackInfoByID(songInfo);
                 songInfo.forEach(song => {
                     try {
