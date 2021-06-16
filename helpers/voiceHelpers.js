@@ -8,6 +8,7 @@ const axios = require('axios');
 
 var queue = {};
 
+// Helper/reused functions
 function timeRemaining(streamTime, totalTime) {
     let timeRemaining = totalTime - streamTime;
     let hours = Math.floor(timeRemaining / 3600);
@@ -31,43 +32,9 @@ function createQueue(id) {
     }
 }
 
-function displayQueue(id, time) {
-    if (queue[id] == null || queue[id].length === 0) {
-        return "There is nothing in queue."
-    }
-    let runningTime = queue[id][0].time;
-    var output = `Now playing ${queue[id][0].title} with ${timeRemaining(time, runningTime)} remaining`
-    if (queue[id].length === 1) {
-        output += "\n\nNo other songs in queue."
-    } else {
-        output += "\n\nUp Next:"
-        let len = output.length
-        let i = 1
-        while (len < 1800 && i < queue[id].length) {
-            len += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`.length;
-            output += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`;
-            runningTime += queue[id][i].time;
-            i++;
-        }
-    }
-
-    return { embed: {
-            color: "#FF6AD5",
-            title: "Queue",
-            author: {
-                name: "sunsets_locale",
-                icon_url: "https://images-na.ssl-images-amazon.com/images/I/71e7DkexvHL._AC_SX425_.jpg",
-            },
-            thumbnail: {
-                url: queue[id].cover,
-            },
-            description: output,
-        }
-    }
-}
-
 function nowPlaying(song) {
-    return {embed: {
+    return { 
+        embed: {
             color: "#FF6AD5",
             title: song.title,
             url: song.url,
@@ -79,7 +46,7 @@ function nowPlaying(song) {
     }
 }
 
-const join = async (msg) => {
+async function join(msg) {
     if (msg.member.voice.channel === null || !msg.member.voice.channel.joinable) {
         msg.reply("you are not currently in a voice channel");
     } else {
@@ -151,9 +118,11 @@ async function getLyrics(query) {
 }
 
 module.exports = {
-    join: join,
+    join: (msg, cmd) => {
+        join(msg);
+    },
 
-    dc: (msg) => {
+    dc: (msg, cmd) => {
         if (msg.guild.me.voice.channel === null) {
             msg.reply("I am not currently in a voice channel");
         } else {
@@ -162,7 +131,14 @@ module.exports = {
         }
     },
 
-    enqueue: async (msg, query, sc=false) => {
+    enqueue: async (msg, cmd) => {
+        if (cmd.position.length < 1) {
+            msg.reply("you did not enter a song name.")
+            return ;
+        }
+        let query = cmd.position.join(" ").trim();
+        let sc = cmd.sc || cmd.soundcloud;
+
         createQueue(msg.guild.id);
         try {
             if (sc) {
@@ -195,12 +171,19 @@ module.exports = {
         }  
     },
 
-    enqueuePlaylist: async (msg, query, sc=false) => {
+    enqueuePlaylist: async (msg, cmd) => {
+        if (cmd.position.length < 1) {
+            msg.reply("you did not enter a song name.")
+            return ;
+        }
+        let query = cmd.position.join(" ").trim();
+        let sc = cmd.sc || cmd.soundcloud;
         createQueue(msg.guild.id);
+
         let songsAdded = 0;
         let playOnAdd = (queue[msg.guild.id].length === 0) ? true : false;
         try {
-            if (sc) {
+            if (sc || scdl.isPlaylistURL(query)) {
                 let songInfo;
                 if (scdl.isPlaylistURL(query)) {
                     songInfo = await scdl.getSetInfo(query);
@@ -269,7 +252,7 @@ module.exports = {
         }  
     },
 
-    resume: (msg) => {
+    resume: (msg, cmd) => {
         try {
             msg.guild.me.voice.connection.dispatcher.resume()
         } catch {
@@ -277,7 +260,7 @@ module.exports = {
         }
     },
 
-    pause: (msg) => {
+    pause: (msg, cmd) => {
         try {
             msg.guild.me.voice.connection.dispatcher.pause()
         } catch {
@@ -285,7 +268,18 @@ module.exports = {
         }
     },
 
-    skip: (msg, index=0) => {
+    skip: (msg, cmd) => {
+        let index;
+        if (cmd.position.length < 1) {
+            index = 1;
+        } else {
+            index = parseInt(cmd.position[0]);
+            if (index < 0 || index >= queue[msg.guild.id].length) {
+                msg.reply("invalid song index.");
+                return ;
+            }
+        }
+
         try {
             if (index === 0) {
                 index++;
@@ -301,7 +295,7 @@ module.exports = {
         }
     },
 
-    stop: (msg) => {
+    stop: (msg, cmd) => {
         try {
             queue[msg.guild.id] = [];
             msg.guild.me.voice.connection.dispatcher.end();
@@ -310,23 +304,44 @@ module.exports = {
         }
     },
 
-    clear: (msg) => {
+    clear: (msg, cmd) => {
         queue[msg.guild.id] = [];
         msg.reply("the queue has been cleared.")
     },
 
-    seek: (msg, index) => {
+    seek: (msg, cmd) => {
+        let index;
+        if (cmd.position.length < 1) {
+            msg.reply("you did not enter a song index.");
+            return ;
+        } else {
+            index = parseInt(cmd.position[0]);
+            if (index < 0 || index >= queue[msg.guild.id].length) {
+                msg.reply("invalid song index.");
+                return ;
+            }
+        }
+
         try {
-            const song = queue[msg.guild.id].splice(index);
-            queue[msg.guild.id].splice(0, 1, song[0]);
-            
+            let splicedSongs = queue[msg.guild.id].splice(index);
+            let seekedSong = splicedSongs.splice(0, 1);
+            queue[msg.guild.id].splice(0, 1);
+            queue[msg.guild.id] = [seekedSong[0], ...queue[msg.guild.id], ...splicedSongs];
             play(msg, true);
         } catch {
             msg.reply("the song index was invalid.")
         }
     },
 
-    remove: (msg, index) => {
+    remove: (msg, cmd) => {
+        let index;
+        if (cmd.position.length < 1) {
+            msg.reply("you did not enter a song index.");
+            return ;
+        } else {
+            index = parseInt(cmd.position[0]);
+        }
+
         try {
             const removedSong = queue[msg.guild.id].splice(index, 1);
             msg.reply(`${removedSong[0].title} was removed`)
@@ -335,16 +350,52 @@ module.exports = {
         }
     },
 
-    queue: (msg) => {
+    queue: (msg, cmd) => {
         try {
-            msg.channel.send(displayQueue(msg.guild.id, Math.floor(msg.guild.me.voice.connection.dispatcher.streamTime / 1000)));
+            const id = msg.guild.id;
+            const time = Math.floor(msg.guild.me.voice.connection.dispatcher.streamTime / 1000);
+
+            if (queue[id] == null || queue[id].length === 0) {
+                return "There is nothing in queue."
+            }
+            let runningTime = queue[id][0].time;
+            var output = `Now playing ${queue[id][0].title} with ${timeRemaining(time, runningTime)} remaining`
+            if (queue[id].length === 1) {
+                output += "\n\nNo other songs in queue."
+            } else {
+                output += "\n\nUp Next:"
+                let len = output.length
+                let i = 1
+                while (len < 1800 && i < queue[id].length) {
+                    len += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`.length;
+                    output += `\n${i}) ${queue[id][i].title} ${timeRemaining(time, runningTime)}`;
+                    runningTime += queue[id][i].time;
+                    i++;
+                }
+            }
+        
+            const embedQueue = { 
+                embed: {
+                    color: "#FF6AD5",
+                    title: "Queue",
+                    author: {
+                        name: "sunsets_locale",
+                        icon_url: "https://images-na.ssl-images-amazon.com/images/I/71e7DkexvHL._AC_SX425_.jpg",
+                    },
+                    thumbnail: {
+                        url: queue[id].cover,
+                    },
+                    description: output,
+                }
+            }
+            msg.channel.send(embedQueue);
         } catch (e) {
             console.log(e);
             msg.reply("there is nothing in queue.");
         }
     },
 
-    np: (msg) => {
+    np: (msg, cmd) => {
         try {
             msg.channel.send(nowPlaying(queue[msg.guild.id][0]));
         } catch {
@@ -352,7 +403,12 @@ module.exports = {
         }
     },
 
-    lyrics: async (msg, query=null) => {
+    lyrics: async (msg, cmd) => {
+        let query = null;
+        if (cmd.position.length >= 1) {
+            query = cmd.position.join(" ").trim();
+        }
+
         let curSong = (queue[msg.guild.id] != null && queue[msg.guild.id].length > 0) ? queue[msg.guild.id][0].title : null;
         let q = (query != null) ? query : curSong;
         let res = (q != null) ? await getLyrics(q) : false

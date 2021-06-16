@@ -73,122 +73,39 @@ const help = {embed: {
             }
         ],
     }
-}
+};
+
+const cmdMap = {
+    "join": voiceHelpers.join,
+    "dc": voiceHelpers.dc,
+    "play": voiceHelpers.enqueue,
+    "playlist": voiceHelpers.enqueuePlaylist,
+    "pause": voiceHelpers.pause,
+    "resume": voiceHelpers.resume,
+    "skip": voiceHelpers.skip,
+    "stop": voiceHelpers.stop,
+    "queue": voiceHelpers.queue,
+    "clear": voiceHelpers.clear,
+    "remove": voiceHelpers.remove,
+    "seek": voiceHelpers.seek,
+    "np": voiceHelpers.np,
+    "lyric": voiceHelpers.lyrics,
+    "help": (msg, cmd) => {
+        msg.channel.send(help);
+    }
+};
 
 module.exports = {
     messageHandler: (msg) => {
         if (msg.content.startsWith(pre)) {
             const content = getArgs(msg.content.slice(pre.length));
             console.log(content);
-            switch (content.command) {
-                case "join":
-                    voiceHelpers.join(msg);
-                    break;
-    
-                case "dc":
-                    voiceHelpers.dc(msg);
-                    break;
-    
-                case "play":
-                    if (content.position < 1) {
-                        msg.reply("you did not enter a song name.")
-                    } else {
-                        voiceHelpers.enqueue(msg, content.position.join(" ").trim(), content.sc || content.soundcloud);
-                    }
-                    break;
 
-                case "playlist":
-                    if (content.position < 1) {
-                        msg.reply("you did not enter a playlist name.")
-                    } else {
-                        voiceHelpers.enqueuePlaylist(msg, content.position.join(" ").trim(), content.sc || content.soundcloud);
-                    }
-                    break;
-    
-                case "pause":
-                    voiceHelpers.pause(msg);
-                    break;
-    
-                case "resume":
-                    voiceHelpers.resume(msg);
-                    break;
-    
-                case "skip":
-                    if (content.position < 1) {
-                        voiceHelpers.skip(msg, 0);
-                    } else {
-                        voiceHelpers.skip(msg, parseInt(content.position[0]));
-                    }
-                    break
-    
-                case "stop":
-                    voiceHelpers.stop(msg);
-                    break;
-    
-                case "queue":
-                    voiceHelpers.queue(msg);
-                    break;
-
-                case "clear":
-                    voiceHelpers.clear(msg);
-                    break;
-    
-                case "remove":
-                    if (content.position < 1) {
-                        msg.reply("you did not enter a song index.")
-                    } else {
-                        voiceHelpers.remove(msg, parseInt(content.position[0]));
-                    }
-                    break;
-    
-                case "seek":
-                    if (content.position < 1) {
-                        msg.reply("you did not enter a song index.")
-                    } else {
-                        voiceHelpers.seek(msg, parseInt(content.position[0]));
-                    }
-                break;
-    
-                case "help":
-                    msg.channel.send(help);
-                break;
-
-                // case "clip":
-                    // try {
-                    //     clipHelpers.clip(msg);
-                    //     clip = true;
-                    // } catch (e) {
-                    //     console.log("Error with clipping.")
-                    //     console.log(e)
-                    // }
-                // break;
-
-                case "np":
-                    voiceHelpers.np(msg);
-                break;
-
-                case "lyric":
-                    if (content.position < 1) {
-                        voiceHelpers.lyrics(msg);
-                    } else {
-                        voiceHelpers.lyrics(msg, content.position.join(" ").trim());
-                    }
-                break;
-
-                default:
-                    msg.reply(`sorry, I did not understand that command, try ${pre}help to get a list of available commands.`)
+            if (content.command in cmdMap) {
+                cmdMap[content.command](msg, content);
+            } else {
+                msg.reply(`sorry, I did not understand that command, try ${pre}help to get a list of available commands.`);
             }
         } 
-        // else if (clip && msg.author.id !== msg.guild.me.id) {
-        //     const clipName = msg.content.split(' ').join("-").trim();
-        //     try {
-        //         clipHelpers.ship(msg, clipName)
-        //     } catch (e) {
-        //         console.log("Error with shipping");
-        //         console.log(e);
-        //     } finally {
-        //         clip = false;
-        //     }
-        // }
     }
 }
