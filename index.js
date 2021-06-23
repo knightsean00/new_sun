@@ -1,18 +1,18 @@
-require('dotenv').config();
-const Discord = require('discord.js');
+require("dotenv").config();
+const Discord = require("discord.js");
 const client = new Discord.Client();
-const { messageHandler } = require('./helpers/messageHandler');
-const { startStream } = require('./helpers/clipHelpers');
-const { shutdown } = require('./helpers/generalUtil');
+const { messageHandler } = require("./helpers/messageHandler");
+// const { startStream } = require("./helpers/clipHelpers");
+const { shutdown } = require("./helpers/generalUtil");
 
 
-client.on('ready', () => {
-    console.log(`Logged in with ${client.user.tag}`);
+client.on("ready", () => {
+	console.log(`Logged in with ${client.user.tag}`);
 });
 
-client.on('message', msg => {
-    messageHandler(msg, client)
-})
+client.on("message", msg => {
+	messageHandler(msg, client);
+});
 
 // client.on("voiceStateUpdate", (oldState, newState) => {
 //     const memberID = oldState.member.id;
@@ -28,10 +28,10 @@ client.on('message', msg => {
 client.login(process.env.discordToken);
 
 
-process.on('SIGTERM', () => {
-    shutdown(client);
-})
+process.on("SIGTERM", () => {
+	shutdown(client);
+});
 
-process.on('SIGINT', () => {
-    shutdown(client);
-})
+process.on("SIGINT", () => {
+	shutdown(client);
+});
