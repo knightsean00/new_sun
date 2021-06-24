@@ -51,7 +51,7 @@ async function join(msg) {
 	if (msg.member.voice.channel === null || !msg.member.voice.channel.joinable) {
 		msg.reply("you are not currently in a voice channel");
 	} else {
-		// const connect = await msg.member.voice.channel.join();
+		const connect = await msg.member.voice.channel.join();
 		// clipHelpers.startStream(msg.guild.me.id, msg.guild.id, msg.member.voice.channel.members, connect);
 	}
 	return;
@@ -138,14 +138,21 @@ module.exports = {
 			return ;
 		}
 		let query = cmd.position.join(" ").trim();
-		let sc = cmd.sc || cmd.soundcloud;
+		// const sc = cmd.sc || cmd.soundcloud;
+		const sc = true;
 
 		createQueue(msg.guild.id);
 		try {
-			if (sc) {
-				let songInfo = await scdl.search({query: query, resourceType: "tracks", limit: 1});
-				songInfo = songInfo.collection[0];
-				queue[msg.guild.id].push({type: "sc", 
+			if (sc || scdl.isValidUrl(query)) {
+				let songInfo;
+				if (scdl.isValidUrl(query)) {
+					songInfo = await scdl.getInfo(query);
+				} else {
+					songInfo = await scdl.search({query: query, resourceType: "tracks", limit: 1});
+					songInfo = songInfo.collection[0];
+				}
+				queue[msg.guild.id].push({
+					type: "sc", 
 					cover: songInfo.artwork_url, 
 					url: songInfo.permalink_url, 
 					title: songInfo.title, 
@@ -157,7 +164,8 @@ module.exports = {
 				const filters = possibleFilters.get("Type").get("Video");
 				let res = await ytsr(filters.url, {limit: 1});
 				res = res.items[0];
-				queue[msg.guild.id].push({type: "yt", 
+				queue[msg.guild.id].push({
+					type: "yt", 
 					cover: res.bestThumbnail.url, 
 					url: res.url, 
 					title: res.title, 
@@ -178,7 +186,9 @@ module.exports = {
 			return ;
 		}
 		let query = cmd.position.join(" ").trim();
-		let sc = cmd.sc || cmd.soundcloud;
+		// let sc = cmd.sc || cmd.soundcloud;
+		const sc = true;
+
 		createQueue(msg.guild.id);
 
 		let songsAdded = 0;
