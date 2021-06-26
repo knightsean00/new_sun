@@ -138,8 +138,7 @@ module.exports = {
 			return ;
 		}
 		let query = cmd.position.join(" ").trim();
-		// const sc = cmd.sc || cmd.soundcloud;
-		const sc = true;
+		const sc = cmd.sc || cmd.soundcloud;
 
 		createQueue(msg.guild.id);
 		try {
@@ -186,8 +185,7 @@ module.exports = {
 			return ;
 		}
 		let query = cmd.position.join(" ").trim();
-		// let sc = cmd.sc || cmd.soundcloud;
-		const sc = true;
+		const sc = cmd.sc || cmd.soundcloud;
 
 		createQueue(msg.guild.id);
 
